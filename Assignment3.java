@@ -145,7 +145,6 @@ public class Assignment3 {
     public MRG32k3a getRNG() {
 
         // TO DO: create a random seed, for examplel using RNG
-    	Random random = new Random();
         for (int i=0; i<6; i++) {
         	this.seed[i] = Long.parseLong(Long.toString(RNG.nextLong()).substring(0, 6));
         }
@@ -222,6 +221,12 @@ public class Assignment3 {
     public Solution runLocalSearch() {
 
         // TO DO: perform local search here
+    	Solution neighbour;
+    	Solution currentSolution = getRandomSolution();
+    	for (int i=0; i < this.budget; i++) {
+    		neighbour = this.getRandomNeighbor(currentSolution);
+    		currentSolution = this.compareTwoSolutions(currentSolution, neighbour);
+    	}
 
         return getBestSimulatedSolution();
     }
@@ -230,8 +235,12 @@ public class Assignment3 {
     public Solution compareTwoSolutions(Solution sol1, Solution sol2){
 
         // TO DO: return the best solution
-
-        return sol1;
+    	double[] results = simulateTwoSolutionsWithCRN(sol1.kValue, sol1.KValue, sol2.kValue, sol2.KValue, false);
+    	if(results[0] < results[1]) {
+    		return sol1;
+    	}else {
+    		return sol2;
+    	}
     }
 
     // returns a random solution
@@ -240,7 +249,9 @@ public class Assignment3 {
         Solution randomSolution;
 
         // TO DO: generate a random solution
-
+        MRG32k3a RNG = this.getRNG();
+        int rngChoice = RNG.nextInt(0, this.solutionsList.length);
+        randomSolution = this.solutionsList[rngChoice];
         return randomSolution;
     }
 
@@ -248,9 +259,26 @@ public class Assignment3 {
     public Solution getRandomNeighbor (Solution solution) {
 
         Solution randomNeighbor;
-
-        // TO DO: generate a random neighbor of solution
-
+        MRG32k3a RNG = getRNG();
+        int kvalue1 = solution.kValue;
+        int kvalue2 = solution.KValue;
+        while (true) {
+        	int changed = 0;
+        	int selectedX = RNG.nextInt(-1, 1);
+            int selectedY = RNG.nextInt(-1, 1);
+            changed += Math.abs(selectedX);
+            changed += Math.abs(selectedY);
+            if (kvalue1 + selectedX <= this.kMax && kvalue1 + selectedX >= this.kMin) {
+            	if (kvalue2 + selectedY <= this.KMax && kvalue2 + selectedY >= this.KMin) {
+            		if (changed != 0) {
+            			kvalue1 += selectedX;
+            			kvalue2 += selectedY;
+            			randomNeighbor = getSolution(kvalue1, kvalue2);
+            			break;
+            		}
+            	}
+            }
+        }
         return randomNeighbor;
     }
 
@@ -262,8 +290,25 @@ public class Assignment3 {
 
         // TO DO: simulate (k, K) and (k2, K2) with CRN and store their average
         // costs in averageCosts
+        Solution tempSol;
         averageCosts[0] = this.simulateSolution(k, K);
+        if (this.kMin > k && k > this.kMax) {
+        	System.out.println("k not in allowed range");
+        }else if (this.KMin > K && K > this.KMax) {
+        	System.out.println("K not in allowed range");
+        }else {
+        	tempSol = this.getSolution(k, K);
+            tempSol.simResults.add(averageCosts[0]);
+        }
         averageCosts[1] = this.simulateSolution(k2, K2, this.seed1, this.seed2);
+        if (this.kMin > k2 && k2 > this.kMax) {
+        	System.out.println("k2 not in allowed range");
+        }else if (this.KMin > K2 && K2 > this.KMax) {
+        	System.out.println("K2 not in allowed range");
+        }else {
+        	tempSol = this.getSolution(k2, K2);
+            tempSol.simResults.add(averageCosts[1]);
+        }
 
         if (verbose) {
             System.out.println("Average costs for (" + k + ", " + K + ") = " + averageCosts[0]);

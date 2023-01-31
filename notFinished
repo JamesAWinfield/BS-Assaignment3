@@ -145,26 +145,33 @@ public class Assignment3 {
     // returns a RNG that starts from a random seed
     public MRG32k3a getRNG() {
         // TO DO: create a random seed, for example using RNG
-        long[] seed = new long[6];
-        // create RNG based on seed
+    	
+        Random random = new Random();
         
-        for(int i = 0; i < seed.length; i++) {
-        	seed[i] = RNG.nextInt();
+        
+        for (int i=0; i<6; i++) {
+        	this.seed[i] = Long.parseLong(Long.toString(RNG.nextLong()).substring(0, 6));
         }
-        
-        
+
+        // create RNG based on seed
         MRG32k3a RNG = new MRG32k3a();
-        RNG.setSeed(seed);
+        RNG.setSeed(this.seed);
+
         return RNG;
+        
+        
+        
     }
     
     
     // returns a RNG for a given seed (useful for replication purposes)
     public MRG32k3a getRNG(long[] seed) {
+    	
         MRG32k3a randomStream = new MRG32k3a();
         randomStream.setSeed(seed);
         return randomStream;
     }
+    
     
     
     // simulates solution (k, K) and returns the average costs
@@ -196,7 +203,7 @@ public class Assignment3 {
     	
     	long[] serviceSeed = new long[6]; 
     	
-    	while(currentNumberOfSimulations < budget) {
+    	while(currentNumberOfSimulations == 0) {
     	
     	for(int i = 0; i < serviceSeed.length; i ++) { //random service generator
     		serviceSeed[i] = RNG.nextInt();
@@ -221,7 +228,6 @@ public class Assignment3 {
     	}
     	
     	
-    	
     	currentNumberOfSimulations =+ numbSolutions; 
     	
     	
@@ -229,12 +235,33 @@ public class Assignment3 {
         HashSet<Solution> I = selectCandidateSolutions(alpha);
         // TO DO: perform rest of the runs
         
-        while(currentNumberOfSimulations < budget) {
+        while(currentNumberOfSimulations < budget) { 
         	
-        	
-        }
+        	MRG32k3a arrivals = getRNG(arrivalSeed); 
+   		 	MRG32k3a services = getRNG(serviceSeed); 
+   		 	
+   		 	for(int i = 0; i < numbSolutions; i++) {
+   		 		
+   		 		if(I.contains(solutionsList[i])) {
+   		 		ThresholdQueue newModel = new ThresholdQueue(arrivalRate,lowServiceRate, highServiceRate, costsLow, costsHigh, stopTime, solutionsList[i].kValue, solutionsList[i].KValue, arrivals, services);
+   		 		currentNumberOfSimulations += 1;
+   		 			
+   		 		}
+   		 	}
         
-        
+   		 	for(int i = 0; i < arrivalSeed.length; i ++) { //random arrival generator
+    		arrivalSeed[i] = RNG.nextInt();
+   		 	}
+    	
+    	
+   		 	for(int i = 0; i < serviceSeed.length; i ++) { //random service generator
+    		serviceSeed[i] = RNG.nextInt();
+   		 	}
+   		 	
+    	}
+    	
+    	
+    	currentNumberOfSimulations =+ numbSolutions; 
         
         
         
@@ -252,12 +279,18 @@ public class Assignment3 {
        double optimalAverage = optimalSolution.simResults.average();
        double optimalVariance = optimalSolution.simResults.variance();
        double optimalStandardDev = optimalSolution.simResults.standardDeviation();
+       double lamda = WHAT IS THIS VALUE?;
        
-       
+       for(int i = 0; i < numbSolutions; i++) {
+    	   double bestAverage = solutionsList[i].simResults.average();
+    	   double bestVariance = solutionsList[i].simResults.variance();
+    	   double bestStandardDev = solutionsList[i].simResults.standardDeviation();
       
-        
-        
-        
+    	   
+    	   if(bestAverage <= lamda) {
+    		   I.add(solutionsList[i]);
+    	   }
+       }
         
         
         
@@ -270,13 +303,18 @@ public class Assignment3 {
         // TO DO: perform local search here
     	
     	int simulations = 5000; 
-    	//Solution 
-    	
-    	
-    	
-    	
-    	
+        
+        Solution neighbour;
+    	Solution currentSolution = getRandomSolution();
+    	for (int i=0; i < this.budget; i++) {
+    		neighbour = this.getRandomNeighbor(currentSolution);
+    		currentSolution = this.compareTwoSolutions(currentSolution, neighbour);
+    	}
+
         return getBestSimulatedSolution();
+        
+        
+        
     }
     
     
@@ -285,11 +323,14 @@ public class Assignment3 {
     public Solution compareTwoSolutions(Solution sol1, Solution sol2){
         // TO DO: return the best solution
     	
-    	if(sol1.simResults.average() <= sol2.simResults.average()) {
+        
+       double[] results = simulateTwoSolutionsWithCRN(sol1.kValue, sol1.KValue, sol2.kValue, sol2.KValue, false);
+    	if(results[0] < results[1]) {
     		return sol1;
+    	}else {
+    		return sol2;
     	}
-    	
-        return sol2;
+        
     }
     
     
@@ -297,8 +338,12 @@ public class Assignment3 {
     public Solution getRandomSolution() {
         Solution randomSolution;
         // TO DO: generate a random solution
-        //return solutionsList[RNG.nextInt(?)];
-        return solutionsList[RNG.nextInt(numbSolutions)];
+        
+        MRG32k3a RNG = this.getRNG();
+        int rngChoice = RNG.nextInt(0, this.solutionsList.length);
+        randomSolution = this.solutionsList[rngChoice];
+        return randomSolution;
+        
     }
     
     
@@ -307,9 +352,26 @@ public class Assignment3 {
         Solution randomNeighbor;
         // TO DO: generate a random neighbor of solution
         
-        
-        
-        
+        MRG32k3a RNG = getRNG();
+        int kvalue1 = solution.kValue;
+        int kvalue2 = solution.KValue;
+        while (true) {
+        	int changed = 0;
+        	int selectedX = RNG.nextInt(-1, 1);
+            int selectedY = RNG.nextInt(-1, 1);
+            changed += Math.abs(selectedX);
+            changed += Math.abs(selectedY);
+            if (kvalue1 + selectedX <= this.kMax && kvalue1 + selectedX >= this.kMin) {
+            	if (kvalue2 + selectedY <= this.KMax && kvalue2 + selectedY >= this.KMin) {
+            		if (changed != 0) {
+            			kvalue1 += selectedX;
+            			kvalue2 += selectedY;
+            			randomNeighbor = getSolution(kvalue1, kvalue2);
+            			break;
+            		}
+            	}
+            }
+        }
         return randomNeighbor;
     }
     
@@ -318,38 +380,40 @@ public class Assignment3 {
     // simulates (k, K) and (k2, K2) with CRN and return their average costs
     public double[] simulateTwoSolutionsWithCRN(int k, int K, int k2, int K2, boolean verbose) {
         // init
+        
+        
         double[] averageCosts = new double[2];
+
         // TO DO: simulate (k, K) and (k2, K2) with CRN and store their average
         // costs in averageCosts
-        
-        
-        long[] arrivalSeed = new long[6];
-    	
-    	for(int i = 0; i < arrivalSeed.length; i ++) { //random arrival generator
-    		arrivalSeed[i] = RNG.nextInt();
-    	}
-    	
-    	long[] serviceSeed = new long[6]; 
-    	
-    	for(int i = 0; i < serviceSeed.length; i ++) { //random service generator
-    		serviceSeed[i] = RNG.nextInt();
-    	}
-    		 MRG32k3a arrivals = getRNG(arrivalSeed); 
-    		 MRG32k3a services = getRNG(serviceSeed); 
-    		 ThresholdQueue modelK1 = new ThresholdQueue(arrivalRate,lowServiceRate, highServiceRate, costsLow, costsHigh, stopTime, k, K, arrivals, services);
-    		 ThresholdQueue modelK2 = new ThresholdQueue(arrivalRate,lowServiceRate, highServiceRate, costsLow, costsHigh, stopTime, k2, K2, arrivals, services);
-    	
-    	averageCosts[0] = modelK1.simulateRunningCosts().average();
-    	averageCosts[1] = modelK2.simulateRunningCosts().average();
-        
-        
-        
+        Solution tempSol;
+        averageCosts[0] = this.simulateSolution(k, K);
+        if (this.kMin > k && k > this.kMax) {
+        	System.out.println("k not in allowed range");
+        }else if (this.KMin > K && K > this.KMax) {
+        	System.out.println("K not in allowed range");
+        }else {
+        	tempSol = this.getSolution(k, K);
+            tempSol.simResults.add(averageCosts[0]);
+        }
+        averageCosts[1] = this.simulateSolution(k2, K2, this.seed1, this.seed2);
+        if (this.kMin > k2 && k2 > this.kMax) {
+        	System.out.println("k2 not in allowed range");
+        }else if (this.KMin > K2 && K2 > this.KMax) {
+        	System.out.println("K2 not in allowed range");
+        }else {
+        	tempSol = this.getSolution(k2, K2);
+            tempSol.simResults.add(averageCosts[1]);
+        }
+
         if (verbose) {
             System.out.println("Average costs for (" + k + ", " + K + ") = " + averageCosts[0]);
             System.out.println("Average costs for (" + k2 + ", " + K2 + ") = " + averageCosts[1]);
         }
+
         return averageCosts;
     }
+
     
     
     
@@ -362,16 +426,17 @@ public class Assignment3 {
         // TO DO: simulate (k, K) and (k2, K2) without and with CRN multiple
         
         
-        for ( int i = 0; i < numbSims; i ++) {
-        	
-        	
-        	double[] result = this.simulateTwoSolutionsWithCRN(k, K, k2, K2, verbose);
-        	
+       
+        for (int i=0; i<numbSims; i++) {
+        	double val1 = this.simulateSolution(k, K);
+        	double val2 = this.simulateSolution(k2, K2);
+        	diffAverCostsNormal.add(val1 - val2);
         }
         
-        
-        
-        
+        for (int i=0; i<numbSims; i++) {
+        	double[] tempCRN = simulateTwoSolutionsWithCRN(k, K, k2, K2, false);
+        	diffAverCostsCRN.add(tempCRN[0] - tempCRN[1]);
+        }
         
         // times to get their differences and report their Tallystores
         // report results

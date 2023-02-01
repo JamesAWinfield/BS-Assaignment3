@@ -1,0 +1,104 @@
+package assignments;
+
+import umontreal.ssj.randvar.ExponentialGen;
+import umontreal.ssj.rng.RandomStream;
+import umontreal.ssj.simevents.Event;
+import umontreal.ssj.simevents.Sim;
+import umontreal.ssj.stat.TallyStore;
+
+/**
+ * @author mctenthij
+ * Edited by qvanderkaaij and jberkhout
+ */
+public class Ambulance extends Event {
+
+	// ambulance variables
+	int id;
+	Region baseRegion;
+	Accident currentAccident;
+	boolean servesOutsideRegion;
+	double drivingTimeHospitalToBase;
+
+	// RNG
+	ExponentialGen serviceTimeGen;
+
+	// stats counters
+	TallyStore waitTimeTally = new TallyStore("Waiting times");
+	TallyStore serviceTimeTally = new TallyStore("Service times");
+	TallyStore withinTargetTally = new TallyStore("Arrival within target");
+
+	public Ambulance(int id, Region baseRegion, RandomStream serviceRandomStream, double serviceRate, boolean servesOutsideRegion) {
+		this.id = id;
+		currentAccident = null;
+		this.baseRegion = baseRegion;
+		serviceTimeGen = new ExponentialGen(serviceRandomStream, serviceRate);
+		this.servesOutsideRegion = servesOutsideRegion;
+		this.drivingTimeHospitalToBase = drivingTimeHospitalToBase();
+	}
+
+    public void startService(Accident accident, double arrivalTimeAtAccident) {
+        currentAccident = accident;
+        accident.serviceStarted(arrivalTimeAtAccident);
+        double serviceTimeAtScene = serviceTimeGen.nextDouble();
+        double busyServing = 0.0; // calculate the time needed to process the accident and drive back to the base
+        schedule(busyServing); // after busyServing it becomes idle again
+    }
+
+    public void serviceCompleted() {
+        // process the completed current accident: the ambulance brought the
+        // patient to the hospital and is back at its base, what next?
+    	
+    	currentAccident.completed(drivingTimeHospitalToBase);
+    	waitTimeTally.add(currentAccident.getWaitTime());
+    	serviceTimeTally.add(currentAccident.getServiceTime());
+    	
+    	if(baseRegion.queue.size() > 0) {
+    		baseRegion.idleAmbulances.getFirst().startService(baseRegion.queue.getFirst(), drivingTimeToAccident(baseRegion.queue.getFirst()));
+    		baseRegion.idleAmbulances.removeFirst();
+    		baseRegion.queue.removeFirst();
+    	}
+    		
+    		
+    	
+    }
+
+    // return Euclidean distance between accident and hospital
+    public double drivingTimeToAccident(Accident cust) {
+        // calculate the driving time from the base location of the ambulance to the accident location
+    	double[] baseLocation = cust.getLocation();
+    	double[] accidentLocation = baseRegion.baseLocation;
+    	double drivingTimeAccident = ;
+    	
+    	
+        return drivingTimeAccident;
+    }
+
+    // return Euclidean distance between accident and hospital
+    public double drivingTimeToHostital(Accident cust) {
+        // calculate the driving time from accident location to the hospital
+    	double[] accidentLocation = cust.getLocation();
+    	double[] hospitalLocation = new double[2];
+    	double drivingTimeHospital = ;
+    	
+        return drivingTimeHospital;
+    }
+
+	// return Euclidean distance from the hospital to the base
+	public double drivingTimeHospitalToBase() {
+        // calculate the driving time from the hospital to the base
+		double[] hospitalLocation = new double[2];
+    	double[] baseLocation = baseRegion.baseLocation;
+    	double drivingTimeBase = ;
+    	
+        return drivingTimeBase;
+		
+	}
+
+    // event: the ambulance is back at its base after completing service
+    @Override
+    public void actions() {
+        serviceCompleted();
+    }
+
+
+}

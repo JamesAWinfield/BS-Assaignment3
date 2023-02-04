@@ -13,7 +13,7 @@ import umontreal.ssj.simevents.Sim;
 public class Region {
 
     // region variables
-	LinkedList<Accident> queue; // for the unaddressed accidents
+	LinkedList<Accident> queue; // for the unadressed accidents
 	LinkedList<Ambulance> idleAmbulances;
 	double[] baseLocation; // of the particular region
 	ArrivalProcess arrivalProcess;
@@ -44,30 +44,38 @@ public class Region {
     	Accident newAccident = new Accident(Sim.time(), drawLocation(), regionID);
     	Ambulance firstAmbulanceAvailable = null;
     	Ambulance closestAmbulance = null;
-    	double distanceAccident = 1000; //1km = 1000m
+    	double maxDistanceAccident = 1000; //1km = 1000m
     	
     	for(int i = 0; i < numRegions; i++) {
     		while(regions[i].idleAmbulances.size() > 0) {
-    			if(regions[i].queue.size() == 0 && regions[i].idleAmbulances.getFirst().drivingTimeToAccident(newAccident) < distanceAccident) {
+    			if(regions[i].queue.size() == 0 && regions[i].idleAmbulances.getFirst().drivingTimeToAccident(newAccident) < maxDistanceAccident) {
     			closestAmbulance = regions[i].idleAmbulances.getFirst();
     			}
-    			if(regions[i].idleAmbulances.size() > 0) {
-    			
-    			}
-    		}
-    		if(regions[i].idleAmbulances.size() == 0) {
-    			queue.addLast(newAccident);
     		}
     	}
-    }
+    	
+    	
+    	firstAmbulanceAvailable.startService(newAccident, Sim.time() + firstAmbulanceAvailable.drivingTimeToAccident(newAccident));
+    	
+    	
+    	}
 
     // returns a random location inside the region
     public double[] drawLocation() {
         // determine the location of the accident
+    	
+    	
         double[] location = new double[2];
-        location[0] = 0.0; // X-Coordinate of accident location
-        location[1] = 0.0; // Y-Coordinate of accident location
+        double selectRandomLocation1 = locationStream.nextDouble();
+        double selectRandomLocation2 = locationStream.nextDouble();
+        location[0] = baseLocation[0] + selectRandomLocation1; // X-Coordinate of accident location
+        location[1] = baseLocation[1] + selectRandomLocation2; // Y-Coordinate of accident location
+        double YaxesEdge = (Math.cos(Math.PI / 3) * 5) * 3;
+        double XaxesEdge = 10.19;
         return location;
+        
+        
+        
     }
     
 	class ArrivalProcess extends Event {
@@ -94,3 +102,5 @@ public class Region {
 		}
 	}
 }
+
+

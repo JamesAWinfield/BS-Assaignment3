@@ -52,10 +52,16 @@ public class Ambulance extends Event {
     	waitTimeTally.add(currentAccident.getWaitTime());
     	serviceTimeTally.add(currentAccident.getServiceTime());
     	
-    	if(baseRegion.queue.size() > 0) {
+    	
+    	if(baseRegion.queue.size() > 0) { //serve the first call from the queue
     		baseRegion.idleAmbulances.getFirst().startService(baseRegion.queue.getFirst(), drivingTimeToAccident(baseRegion.queue.getFirst()));
     		baseRegion.idleAmbulances.removeFirst();
     		baseRegion.queue.removeFirst();
+    	}
+    	
+    	if(currentAccident.getWaitTime() < Hospital.RESPONSE_TIME_TARGET) {
+    		withinTargetTally.add(1); // only add the ones that are less than 15
+    		baseRegion.idleAmbulances.addLast(this); // puts the ambulance back in the queue 
     	}
     		
     		
@@ -65,11 +71,10 @@ public class Ambulance extends Event {
     // return Euclidean distance between accident and hospital
     public double drivingTimeToAccident(Accident cust) {
         // calculate the driving time from the base location of the ambulance to the accident location
-    	double[] baseLocation = cust.getLocation();
-    	double[] accidentLocation = baseRegion.baseLocation;
-    	double drivingTimeAccident = ;
-    	
-    	
+    	double[] baseLocation = baseRegion.baseLocation;
+    	double[] accidentLocation = cust.getLocation();
+    	double drivingTimeAccident = Math.sqrt((Math.pow(baseLocation[0]-accidentLocation[0],2)) + (Math.pow(baseLocation[1]-accidentLocation[1],2))); // driving time = driving distance 
+    
         return drivingTimeAccident;
     }
 
@@ -78,7 +83,9 @@ public class Ambulance extends Event {
         // calculate the driving time from accident location to the hospital
     	double[] accidentLocation = cust.getLocation();
     	double[] hospitalLocation = new double[2];
-    	double drivingTimeHospital = ;
+    	hospitalLocation[0] = 10.19; //from h0pspital to edge on x-axes
+    	hospitalLocation[1] = (Math.cos(Math.PI / 3) * 5) * 3; // from hospital to edge on y-axes
+    	double drivingTimeHospital = Math.sqrt((Math.pow(hospitalLocation[0]-accidentLocation[0],2)) + (Math.pow(hospitalLocation[1]-accidentLocation[1],2)));
     	
         return drivingTimeHospital;
     }
@@ -87,8 +94,10 @@ public class Ambulance extends Event {
 	public double drivingTimeHospitalToBase() {
         // calculate the driving time from the hospital to the base
 		double[] hospitalLocation = new double[2];
+		hospitalLocation[0] = 10.19; //from h0pspital to edge on x-axes
+    	hospitalLocation[1] = (Math.cos(Math.PI / 3) * 5) * 3; // from hospital to edge on y-axes
     	double[] baseLocation = baseRegion.baseLocation;
-    	double drivingTimeBase = ;
+    	double drivingTimeBase = Math.sqrt((Math.pow(baseLocation[0]- baseLocation[0],2)) + (Math.pow(baseLocation[1]- baseLocation[1],2)));
     	
         return drivingTimeBase;
 		

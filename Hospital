@@ -92,7 +92,7 @@ public class Hospital {
     			
     		}
     	}
-    	???
+    	
 
         return 0;
     }
@@ -105,6 +105,39 @@ public class Hospital {
         double[] location = new double[2];
         location[0] = 0.0; // X-Coordinate of accident location
         location[1] = 0.0; // Y-Coordinate of accident location
+        double YaxesEdge = (Math.cos(Math.PI / 3) * 5) * 3;
+        double XaxesEdge = 10.19;
+        
+        if(j == 0) {
+        	// x axis between -5 and 5 ; y axis between -4.33 and 4.33
+        }
+        
+        if(j == 1) {
+        	// x axis between -5 and 5 ; y axis between 4.33 and 12.99
+        }
+        
+        if(j == 2) {
+        	// x axis between 2.5 and 12.5 ; y axis between 0 and 8.66
+        }
+        
+        if(j == 3) {
+        	// x axis between 2.5 and 12.5 ; y axis between -8.66 and 0
+        }
+        
+        if(j == 4) {
+        	// x axis between -5 and 5 ; y axis between -8.66 and 0
+        }
+        
+        if(j == 5) {
+        	// x axis between -12.5 and -2.5 ; y axis between -8.66 and 0
+        }
+        
+        if(j == 6) {
+        	// x axis between -12.5 and -2.5 ; y axis between -0 and 8.66
+        }
+        
+        
+        
         return location;
     }
 
